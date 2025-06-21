@@ -1,5 +1,5 @@
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.vpc_cidr_block
   instance_tenancy = "default"
   enable_dns_hostnames = true
   enable_dns_support = true
@@ -10,8 +10,6 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.main.id
-
   tags = {
     Name = "main"
   }
@@ -24,28 +22,28 @@ resource "aws_internet_gateway_attachment" "gwa" {
 
 resource "aws_subnet" "public_subnet" {
   vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.20.0/24"
-  availability_zone       = "eu-west-1a"
-  map_public_ip_on_launch = "true"
+  cidr_block = var.public_subnet_cidr
+  availability_zone       = var.availability_zones[0]
+  map_public_ip_on_launch = true
 
   tags = {
-    Name = "VPC_A_Public_Subnet_A"
+    Name = "Public Subnet"
   }
 
 }
 
 resource "aws_subnet" "private_subnet" {
     vpc_id = aws_vpc.main.id
-    cidr_block = "10.0.10.0/24"
-    availability_zone       = "eu-west-1b"
-    map_public_ip_on_launch = "false"
+    cidr_block = var.private_subnet_cidr
+    availability_zone = var.availability_zones[1]
+    map_public_ip_on_launch = false
 
     tags = {
-        Name = "VPC_A_Private_Subnet_A"
+        Name = "Private Subnet"
     }
 }
 
-resource "aws_route_table" "publicrt" {
+resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.main.id
 
   route {
@@ -60,10 +58,10 @@ resource "aws_route_table" "publicrt" {
 
 resource "aws_route_table_association" "public_routetableAS" {
   subnet_id = aws_subnet.public_subnet.id
-  route_table_id = aws_route_table.publicrt.id
+  route_table_id = aws_route_table.public_rt.id
 }
 
-resource "aws_route_table" "privatert" {
+resource "aws_route_table" "private_rt" {
   vpc_id = aws_vpc.main.id
   tags = {
     Name = "private_route_table"
@@ -72,5 +70,5 @@ resource "aws_route_table" "privatert" {
 
 resource "aws_route_table_association" "private_routeAS" {
   subnet_id = aws_subnet.private_subnet.id
-  route_table_id = aws_route_table.privatert.id
+  route_table_id = aws_route_table.private_rt.id
 }
